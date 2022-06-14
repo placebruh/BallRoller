@@ -4,10 +4,14 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-
+   
+    public GameObject deadEffectObj;
+    public GameObject itemEffectObj;
 
     Rigidbody2D rb;
     float angle = 0;
+
+    bool isDead = false;
 
 
     [SerializeField]int xSpeed = 5;
@@ -17,6 +21,7 @@ public class Player : MonoBehaviour
 
     private void Awake()
     {
+       
         rb = GetComponent<Rigidbody2D>();
         gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
     }
@@ -25,12 +30,13 @@ public class Player : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        Application.targetFrameRate = 60;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (isDead == true) return;
         MovePlayer();
 
         GetInput();
@@ -65,8 +71,42 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        gameManager.GameOver();
+        if (other.gameObject.tag == "Obstacle")
+        {
+            Dead();
+        }
+        else if (other.gameObject.tag == "Item") 
+        {
+            GetItem(other);
+            Debug.Log("Score +1");
+         
+        }
+
+       
+    }
+
+    void GetItem(Collider2D other) 
+    {
+       Destroy(Instantiate(itemEffectObj, other.gameObject.transform.position, Quaternion.identity),0.5f);
+        Destroy(other.gameObject.transform.parent.gameObject);
+        gameManager.AddScore();
+    }
+
+     void Dead()
+    {
+        isDead = true;
+        Destroy(Instantiate(deadEffectObj, transform.position, Quaternion.identity),0.5f);
+
+        StopPlayer();
+
+        gameManager.CallGameOver();
+    }
+
+    void StopPlayer() 
+    {
+        rb.velocity = new Vector2(0, 0);
+        rb.isKinematic = true;
     }
 }
